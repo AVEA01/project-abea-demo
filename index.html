@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>はじめてのWEBページ</title>
+  <style>
+    :root { --bg:#0f172a; --fg:#e2e8f0; --accent:#38bdf8; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      color: var(--fg); background: radial-gradient(1200px 800px at 80% -10%, #1e293b, var(--bg));
+      min-height: 100dvh; display: grid; place-items: center; padding: 24px;
+    }
+    .card {
+      width: min(720px, 92vw);
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 16px; padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
+      backdrop-filter: blur(6px);
+    }
+    h1 { margin: 0 0 8px; font-size: clamp(20px, 4vw, 32px); }
+    p { margin: 4px 0 16px; color: #cbd5e1 }
+    .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center }
+    input[type="text"] {
+      flex: 1; min-width: 180px; padding: 10px 12px; border-radius: 10px; border: 1px solid #334155;
+      background: #0b1220; color: var(--fg);
+    }
+    button {
+      padding: 10px 16px; border-radius: 10px; border: 1px solid #0ea5e9;
+      background: linear-gradient(180deg, #38bdf8, #0284c7); color: #04131e;
+      font-weight: 700; cursor: pointer;
+    }
+    button:active { transform: translateY(1px) }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 14px }
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 999px;
+      background: rgba(56,189,248,.15); border: 1px solid rgba(56,189,248,.3); color: #bae6fd; font-size: 14px;
+    }
+    canvas { width: 100%; height: 180px; border-radius: 12px; border: 1px solid #334155; background: #020617 }
+    footer { margin-top: 10px; font-size: 12px; color: #94a3b8 }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>こんにちは、WEB！</h1>
+    <p id="clock">時刻を読み込み中…</p>
+
+    <div class="grid">
+      <div class="row">
+        <input id="name" type="text" placeholder="お名前を入力してね" />
+        <button id="helloBtn">表示する</button>
+        <span class="pill" id="themePill">テーマ切替</span>
+      </div>
+      <p id="message">ここにメッセージが表示されます。</p>
+      <canvas id="scene" width="720" height="180" aria-label="簡単なアニメーション"></canvas>
+    </div>
+
+    <footer>このページはシングルファイルで動作します。index.html として保存→開くだけ。</footer>
+  </main>
+
+  <script>
+    // ⏰ 時計
+    const clock = document.getElementById('clock');
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    function tick() {
+      const now = new Date();
+      clock.textContent = `現在時刻：${now.toLocaleString('ja-JP')}（${tz}）`;
+      requestAnimationFrame(() => {}); // レイアウトのスムーズ化
+    }
+    setInterval(tick, 1000); tick();
+
+    // 🙌 入力→メッセージ表示
+    const input = document.getElementById('name');
+    const msg = document.getElementById('message');
+    document.getElementById('helloBtn').addEventListener('click', () => {
+      const v = input.value.trim();
+      msg.textContent = v ? `はじめまして、${v} さん！` : 'お名前が空です。入力してみてね。';
+    });
+
+    // 🎨 テーマ（背景）切替
+    const pill = document.getElementById('themePill');
+    let dark = true;
+    pill.addEventListener('click', () => {
+      dark = !dark;
+      document.documentElement.style.setProperty('--bg', dark ? '#0f172a' : '#f8fafc');
+      document.body.style.color = dark ? 'var(--fg)' : '#0f172a';
+      document.body.style.background =
+        dark
+          ? 'radial-gradient(1200px 800px at 80% -10%, #1e293b, #0f172a)'
+          : 'radial-gradient(1200px 800px at 80% -10%, #e2e8f0, #f8fafc)';
+    });
+
+    // 🟡 超ミニ・アニメーション（バウンドする円）
+    const canvas = document.getElementById('scene');
+    const ctx = canvas.getContext('2d');
+    let x = 40, y = 40, vx = 2.2, vy = 1.6, r = 16;
+    function loop() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      // 背景のグリッド
+      ctx.globalAlpha = 0.12; ctx.beginPath();
+      for (let i=0;i<canvas.width;i+=24){ ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); }
+      for (let j=0;j<canvas.height;j+=24){ ctx.moveTo(0,j); ctx.lineTo(canvas.width,j); }
+      ctx.strokeStyle = '#38bdf8'; ctx.stroke(); ctx.globalAlpha = 1;
+
+      // ボール
+      x += vx; y += vy;
+      if (x < r || x > canvas.width - r) vx *= -1;
+      if (y < r || y > canvas.height - r) vy *= -1;
+      const grd = ctx.createRadialGradient(x-6, y-6, 4, x, y, r+8);
+      grd.addColorStop(0, '#e0f2fe'); grd.addColorStop(1, '#0284c7');
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+
+      requestAnimationFrame(loop);
+    }
+    loop();
+  </script>
+</body>
+</html>
